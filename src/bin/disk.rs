@@ -1,5 +1,5 @@
-mod disk;
-mod ui;
+use info::disk;
+use info::ui;
 
 fn main() {
     let disks = disk::collect_disks();

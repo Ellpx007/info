@@ -67,7 +67,7 @@ fn style_percent(percent: f64) -> String {
 }
 
 /// 计算“落日余晖”(Sunset) 风格的 RGB 渐变色，percent 取值 0~100
-fn sunset_gradient(percent: f64) -> (u8, u8, u8) {
+pub(crate) fn sunset_gradient(percent: f64) -> (u8, u8, u8) {
     let p = percent.clamp(0.0, 100.0) / 100.0;
 
     let start = (255.0, 184.0, 0.0); // 橙
@@ -78,7 +78,7 @@ fn sunset_gradient(percent: f64) -> (u8, u8, u8) {
 }
 
 /// 将字节数格式化为易于阅读的尺寸字符串（去掉空格）
-fn format_bytes(bytes: u64) -> String {
+pub(crate) fn format_bytes(bytes: u64) -> String {
     ByteSize::b(bytes).to_string().replace(" ", "")
 }
 

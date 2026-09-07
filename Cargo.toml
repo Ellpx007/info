@@ -2,9 +2,21 @@
 name = "info"
 version = "0.1.0"
 edition = "2024"
+autobins = false
 
 [dependencies]
 bytesize = "2.7.0"
 colored = "3.1.1"
 comfy-table = "8.0.0"
+ratatui = "0.30.2"
 sysinfo = "0.39.6"
+unicode-width = "0.2.2"
+walkdir = "2.5.0"
+
+[[bin]]
+name = "disk"
+path = "src/bin/disk.rs"
+
+[[bin]]
+name = "disk-more"
+path = "src/bin/disk-more.rs"

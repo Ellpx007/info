@@ -1,0 +1,6 @@
+# 使用 USTC 镜像源解决 crates.io 下载过慢的问题（仅影响本项目）
+[source.crates-io]
+replace-with = "ustc"
+
+[source.ustc]
+registry = "sparse+https://mirrors.ustc.edu.cn/crates.io-index/"
