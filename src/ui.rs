@@ -70,7 +70,7 @@ fn style_percent(percent: f64) -> String {
 }
 
 /// 计算“落日余晖”(Sunset) 风格的 RGB 渐变色，percent 取值 0~100
-fn sunset_gradient(percent: f64) -> (u8, u8, u8) {
+pub(crate) fn sunset_gradient(percent: f64) -> (u8, u8, u8) {
     let p = percent.clamp(0.0, 100.0) / 100.0;
 
     let start = (255.0, 184.0, 0.0); // 橙

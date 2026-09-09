@@ -23,3 +23,7 @@ path = "src/bin/disk-more.rs"
 [[bin]]
 name = "info-net"
 path = "src/bin/net.rs"
+
+[[bin]]
+name = "info-setting"
+path = "src/bin/setting.rs"
