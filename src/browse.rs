@@ -2,12 +2,12 @@ use std::path::{Path, PathBuf};
 use std::sync::mpsc::{self, Receiver, TryRecvError};
 use std::time::Duration;
 
+use ratatui::Frame;
 use ratatui::crossterm::event::{self, Event, KeyCode, KeyEventKind, KeyModifiers};
 use ratatui::layout::{Alignment, Constraint, Layout};
 use ratatui::style::{Color, Modifier, Style};
 use ratatui::text::{Line, Span};
 use ratatui::widgets::{List, ListItem, ListState, Paragraph};
-use ratatui::Frame;
 
 use unicode_width::{UnicodeWidthChar, UnicodeWidthStr};
 
@@ -179,14 +179,12 @@ impl App {
         // 主体：扫描中提示，或条目列表
         if self.loading {
             frame.render_widget(
-                Paragraph::new("正在扫描占用，请稍候…")
-                    .alignment(Alignment::Center),
+                Paragraph::new("正在扫描占用，请稍候…").alignment(Alignment::Center),
                 body_area,
             );
         } else if self.entries.is_empty() {
             frame.render_widget(
-                Paragraph::new("(目录为空或无法读取)")
-                    .alignment(Alignment::Center),
+                Paragraph::new("(目录为空或无法读取)").alignment(Alignment::Center),
                 body_area,
             );
         } else {

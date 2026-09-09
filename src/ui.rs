@@ -3,13 +3,16 @@ use colored::Colorize;
 
 use crate::disk::DiskInfo;
 
+/// 表头与进度条下方的分隔线宽度
+const RULE_WIDTH: usize = 105;
+
 /// 打印磁盘使用情况表格
 pub fn print_disk_usage_table(disks: &[DiskInfo]) {
     println!(
         "{:<15} {:<15} {:<10} {:<10} {:<10} {:<10} Usage Bar",
         "Name", "Mount", "FS", "Total", "Used", "Free"
     );
-    println!("{}", "-".repeat(105));
+    println!("{}", "-".repeat(RULE_WIDTH));
 
     for disk in disks {
         println!(
@@ -67,14 +70,18 @@ fn style_percent(percent: f64) -> String {
 }
 
 /// 计算“落日余晖”(Sunset) 风格的 RGB 渐变色，percent 取值 0~100
-pub(crate) fn sunset_gradient(percent: f64) -> (u8, u8, u8) {
+fn sunset_gradient(percent: f64) -> (u8, u8, u8) {
     let p = percent.clamp(0.0, 100.0) / 100.0;
 
     let start = (255.0, 184.0, 0.0); // 橙
-    let end = (255.0, 0.0, 128.0);   // 玫红
+    let end = (255.0, 0.0, 128.0); // 玫红
     let lerp = |s: f64, e: f64| (s + (e - s) * p) as u8;
 
-    (lerp(start.0, end.0), lerp(start.1, end.1), lerp(start.2, end.2))
+    (
+        lerp(start.0, end.0),
+        lerp(start.1, end.1),
+        lerp(start.2, end.2),
+    )
 }
 
 /// 将字节数格式化为易于阅读的尺寸字符串（去掉空格）
@@ -85,7 +92,7 @@ pub(crate) fn format_bytes(bytes: u64) -> String {
 /// 超过最大宽度时截断并在末尾加上省略号
 fn truncate(s: &str, max_width: usize) -> String {
     if s.chars().count() > max_width {
-        let mut truncated: String = s.chars().take(max_width - 1).collect();
+        let mut truncated: String = s.chars().take(max_width.saturating_sub(1)).collect();
         truncated.push('…');
         truncated
     } else {

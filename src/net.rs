@@ -95,8 +95,16 @@ pub fn collect() -> NetInfo {
         .map(|i| i.tx_rate)
         .sum();
     // 与速率统计口径一致：合计只计非回环接口（回环收发量会显著虚高）
-    let total_rx = interfaces.iter().filter(|i| !i.is_loopback).map(|i| i.total_rx).sum();
-    let total_tx = interfaces.iter().filter(|i| !i.is_loopback).map(|i| i.total_tx).sum();
+    let total_rx = interfaces
+        .iter()
+        .filter(|i| !i.is_loopback)
+        .map(|i| i.total_rx)
+        .sum();
+    let total_tx = interfaces
+        .iter()
+        .filter(|i| !i.is_loopback)
+        .map(|i| i.total_tx)
+        .sum();
 
     let ports = collect_ports();
     let (tcp_listen, tcp_established, tcp_total) = tcp_counts();
@@ -153,7 +161,8 @@ fn fallback_interface_read() -> Vec<Interface> {
         let mac = std::fs::read_to_string(&mac_path)
             .map(|s| s.trim().to_string())
             .unwrap_or_default();
-        let ips = read_sysfs_ips(&name);
+        // 兜底路径下 IPv4/IPv6 通常拿不到，留空即可（正常路径用 sysinfo 已足够）
+        let ips = Vec::new();
         out.push(Interface {
             is_loopback: name == "lo",
             name,
@@ -166,12 +175,6 @@ fn fallback_interface_read() -> Vec<Interface> {
         });
     }
     out
-}
-
-/// 从 /proc/net/if_inet6 与 /proc/net/fib_trie 兜底读 IP；此处仅取 if_inet6，
-/// IPv4 在这里通常不齐全，保留空即可（正常路径用 sysinfo 已足够）。
-fn read_sysfs_ips(_name: &str) -> Vec<String> {
-    Vec::new()
 }
 
 fn read_hostname() -> String {
@@ -271,8 +274,12 @@ fn parse_net_conns(path: &str, proto: &'static str, is_v6: bool) -> Vec<RawConn>
         let Ok(state) = u8::from_str_radix(f[3], 16) else {
             continue;
         };
-        let Ok(uid) = f[7].parse::<u32>() else { continue };
-        let Ok(inode) = f[9].parse::<u64>() else { continue };
+        let Ok(uid) = f[7].parse::<u32>() else {
+            continue;
+        };
+        let Ok(inode) = f[9].parse::<u64>() else {
+            continue;
+        };
         let Some((ip, port)) = parse_local(f[1], is_v6) else {
             continue;
         };
@@ -352,9 +359,13 @@ fn socket_process_map(conns: &[RawConn]) -> HashMap<u64, String> {
         else {
             continue;
         };
-        let Ok(pid) = pid_str.parse::<u32>() else { continue };
+        let Ok(pid) = pid_str.parse::<u32>() else {
+            continue;
+        };
         let pid_dir = entry.path();
-        let Ok(meta) = std::fs::symlink_metadata(&pid_dir) else { continue };
+        let Ok(meta) = std::fs::symlink_metadata(&pid_dir) else {
+            continue;
+        };
         if !uids.contains(&meta.uid()) {
             continue;
         }
@@ -364,9 +375,13 @@ fn socket_process_map(conns: &[RawConn]) -> HashMap<u64, String> {
                 .unwrap_or_default();
             format!("{comm} ({pid})")
         };
-        let Ok(fds) = std::fs::read_dir(pid_dir.join("fd")) else { continue };
+        let Ok(fds) = std::fs::read_dir(pid_dir.join("fd")) else {
+            continue;
+        };
         for fd in fds.flatten() {
-            let Ok(target) = std::fs::read_link(fd.path()) else { continue };
+            let Ok(target) = std::fs::read_link(fd.path()) else {
+                continue;
+            };
             if let Some(inode) = socket_inode(&target)
                 && needed_inodes.contains(&inode)
             {
@@ -413,7 +428,11 @@ fn tcp_counts() -> (usize, usize, usize) {
 
 /// 把采集到的网络信息排版成精美文本打印到 stdout
 pub fn print(net: &NetInfo) {
-    println!("  {}  ·  {}", "网络概览".cyan().bold(), net.hostname.yellow().bold());
+    println!(
+        "  {}  ·  {}",
+        "网络概览".cyan().bold(),
+        net.hostname.yellow().bold()
+    );
     print_rates(net);
     println!();
 
@@ -428,7 +447,11 @@ pub fn print(net: &NetInfo) {
     println!();
 
     // 端口
-    println!("  {}  （{} 个监听/绑定端口）", "监听端口".bold().cyan(), net.ports.len());
+    println!(
+        "  {}  （{} 个监听/绑定端口）",
+        "监听端口".bold().cyan(),
+        net.ports.len()
+    );
     print_ports(&net.ports);
     println!();
 
@@ -449,7 +472,10 @@ pub fn print(net: &NetInfo) {
         net.dns.join("  ").green().to_string()
     };
     println!("    {}{}", pad_right("DNS", 10), dns);
-    let tcp = format!("{}（监听 {} · 已建立 {}）", net.tcp_total, net.tcp_listen, net.tcp_established);
+    let tcp = format!(
+        "{}（监听 {} · 已建立 {}）",
+        net.tcp_total, net.tcp_listen, net.tcp_established
+    );
     println!("    {}{}", pad_right("TCP 连接", 10), tcp);
     println!();
 }
@@ -461,8 +487,12 @@ fn print_rates(net: &NetInfo) {
     println!("    {}  {}", "↑ 上传".yellow().bold(), tx.yellow());
     println!(
         "    {}",
-        format!("累计 ↓ {}   ↑ {}", format_bytes(net.total_rx), format_bytes(net.total_tx))
-            .dimmed()
+        format!(
+            "累计 ↓ {}   ↑ {}",
+            format_bytes(net.total_rx),
+            format_bytes(net.total_tx)
+        )
+        .dimmed()
     );
 }
 
@@ -574,7 +604,10 @@ mod tests {
             ipv6_from_hex("00000000000000000000000001000000"),
             Some(Ipv6Addr::LOCALHOST)
         );
-        assert_eq!(ipv6_from_hex("00000000000000000000000000000000"), Some(Ipv6Addr::UNSPECIFIED));
+        assert_eq!(
+            ipv6_from_hex("00000000000000000000000000000000"),
+            Some(Ipv6Addr::UNSPECIFIED)
+        );
         // 4000::1 的字节：40 00 ... 00 01 => 首字小端 u32 = 0x00000040 => "00000040"
         assert_eq!(
             ipv6_from_hex("00000040000000000000000001000000"),
@@ -590,14 +623,26 @@ mod tests {
     #[test]
     fn gateway_hex_is_little_endian() {
         // 192.168.31.1
-        assert_eq!(ipv4_from_hex("011FA8C0"), Some(Ipv4Addr::new(192, 168, 31, 1)));
+        assert_eq!(
+            ipv4_from_hex("011FA8C0"),
+            Some(Ipv4Addr::new(192, 168, 31, 1))
+        );
     }
 
     #[test]
     fn fmt_ip_port_blank_for_unspecified() {
-        assert_eq!(fmt_ip_port(IpAddr::V4(Ipv4Addr::UNSPECIFIED), 8080), "*:8080");
-        assert_eq!(fmt_ip_port(IpAddr::V4(Ipv4Addr::new(192, 168, 0, 1)), 22), "192.168.0.1:22");
-        assert_eq!(fmt_ip_port(IpAddr::V6("::1".parse().unwrap()), 22), "[::1]:22");
+        assert_eq!(
+            fmt_ip_port(IpAddr::V4(Ipv4Addr::UNSPECIFIED), 8080),
+            "*:8080"
+        );
+        assert_eq!(
+            fmt_ip_port(IpAddr::V4(Ipv4Addr::new(192, 168, 0, 1)), 22),
+            "192.168.0.1:22"
+        );
+        assert_eq!(
+            fmt_ip_port(IpAddr::V6("::1".parse().unwrap()), 22),
+            "[::1]:22"
+        );
         assert_eq!(fmt_ip_port(IpAddr::V6(Ipv6Addr::UNSPECIFIED), 53), "*:53");
     }
 
