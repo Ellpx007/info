@@ -13,9 +13,13 @@ unicode-width = "0.2.2"
 walkdir = "2.5.0"
 
 [[bin]]
-name = "disk"
+name = "info-disk"
 path = "src/bin/disk.rs"
 
 [[bin]]
-name = "disk-more"
+name = "info-diskmore"
 path = "src/bin/disk-more.rs"
+
+[[bin]]
+name = "info-net"
+path = "src/bin/net.rs"
